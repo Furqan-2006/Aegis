@@ -18,7 +18,7 @@ Aegis monitors a Linux host for security-relevant behavior — process activity,
 - [ ] Week 5 — Attack simulation, integration testing
 - [ ] Week 6 — Documentation, demo, polish
 
-See [`docs/03-aegis-scope.md`](docs/03-aegis-scope.md) for the full week-by-week plan.
+See [`docs/03-aegis-scope.md`](docs/scope.md) for the full week-by-week plan.
 
 ---
 
@@ -35,24 +35,24 @@ This project also builds directly on [SAM (System Activity Monitor)](#), a prior
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────────────────┐
 │                         AEGIS HOST                            │
-│                                                                 │
-│  ┌──────────────────┐         ┌───────────────────────────┐  │
-│  │   SENSING LAYER   │  JSON   │      POLICY LAYER          │  │
-│  │   (aegisd, C)     │ events  │   (Python rule engine)     │  │
-│  │                   │ ──────► │                             │  │
-│  │  - Process scan   │  via    │  - Rule engine              │  │
-│  │  - File watch     │  Unix   │  - Severity scoring         │  │
-│  │  - Net connections│ socket  │  - Alert generation         │  │
-│  │  - Privilege chk  │         │  - Log/alert output         │  │
-│  └──────────────────┘         └───────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+│                                                               │
+│  ┌───────────────────┐         ┌───────────────────────────┐  │
+│  │   SENSING LAYER   │  JSON   │      POLICY LAYER         │  │
+│  │   (aegisd, C)     │ events  │   (Python rule engine)    │  │
+│  │                   │ ──────► │                           │  │
+│  │  - Process scan   │  via    │  - Rule engine            │  │
+│  │  - File watch     │  Unix   │  - Severity scoring       │  │
+│  │  - Net connections│ socket  │  - Alert generation       │  │
+│  │  - Privilege chk  │         │  - Log/alert output       │  │
+│  └───────────────────┘         └───────────────────────────┘  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-The two layers communicate over a locked JSON event schema (see [`docs/06-aegis-schema-reference.md`](docs/06-aegis-schema-reference.md) and the formal schema at [`schema/aegis-event-schema-v1.json`](schema/aegis-event-schema-v1.json)). This schema is the contract between the two halves of the system — both sides are built and tested against it independently.
+The two layers communicate over a locked JSON event schema (see [`docs/json_schema_ref.md`](docs/json_schema_ref.md) and the formal schema at [`schema/schema.json`](schema/schema.json)). This schema is the contract between the two halves of the system — both sides are built and tested against it independently.
 
-Full architectural detail, including IPC mechanism choice, polling strategy, and component breakdown, is in [`docs/02-aegis-architecture.md`](docs/02-aegis-architecture.md).
+Full architectural detail, including IPC mechanism choice, polling strategy, and component breakdown, is in [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
@@ -66,7 +66,7 @@ Full architectural detail, including IPC mechanism choice, polling strategy, and
 | `file_modified` | SHA-256 integrity on sensitive paths | Modification of `/etc/shadow`, `/etc/passwd`, SSH config outside expected admin operations |
 | `privilege_change` | UID/EUID transitions | A non-root process acquiring EUID 0 — privilege escalation |
 
-Full field reference and worked examples for every event type: [`docs/06-aegis-schema-reference.md`](docs/06-aegis-schema-reference.md).
+Full field reference and worked examples for every event type: [`docs/json_schema_ref.md`](docs/json_schema_ref.md).
 
 ---
 
@@ -78,7 +78,7 @@ Daemon design and lifecycle (fork/detach, signal handling, graceful shutdown), `
 **Security / Detection Engineer — policy layer**
 Detection rule design and implementation, severity scoring, and the reasoning behind what OS-level signals indicate compromise — starting from simple static rules and growing toward time-windowed correlation across multiple signal types.
 
-Both roles are intentionally substantive — see [`docs/01-aegis-project-proposal.md`](docs/01-aegis-project-proposal.md) for why this split was deliberately designed this way, and what it was designed to avoid.
+Both roles are intentionally substantive — see [`docs/proposal.md`](docs/proposal.md) for why this split was deliberately designed this way, and what it was designed to avoid.
 
 ---
 
@@ -86,11 +86,11 @@ Both roles are intentionally substantive — see [`docs/01-aegis-project-proposa
 
 | Document | Purpose |
 |---|---|
-| [`docs/01-aegis-project-proposal.md`](docs/01-aegis-project-proposal.md) | Why this project exists, problem statement, roles, risks |
-| [`docs/02-aegis-architecture.md`](docs/02-aegis-architecture.md) | Full system architecture, component breakdown, technology choices |
-| [`docs/03-aegis-scope.md`](docs/03-aegis-scope.md) | In/out of scope boundaries, week-by-week build plan, definition of done |
-| [`docs/06-aegis-schema-reference.md`](docs/06-aegis-schema-reference.md) | Field-by-field event schema reference with worked examples |
-| [`schema/aegis-event-schema-v1.json`](schema/aegis-event-schema-v1.json) | Formal JSON Schema, used for runtime validation in the policy layer |
+| [`docs/proposal.md`](docs/proposal.md) | Why this project exists, problem statement, roles, risks |
+| [`docs/architecture.md`](docs/architecture.md) | Full system architecture, component breakdown, technology choices |
+| [`docs/scope.md`](docs/scope.md) | In/out of scope boundaries, week-by-week build plan, definition of done |
+| [`docs/json_schema_ref.md`](docs/json_schema_ref.md) | Field-by-field event schema reference with worked examples |
+| [`schema/schema.json`](schema/schema.json) | Formal JSON Schema, used for runtime validation in the policy layer |
 
 ---
 
@@ -106,7 +106,7 @@ Aegis is scoped narrowly on purpose, to be completable in 6–7 weeks by two peo
 - Database backend (flat JSON logs)
 - Offensive tooling / exploit development — Aegis is defensive only
 
-Full reasoning for each exclusion: [`docs/03-aegis-scope.md`](docs/03-aegis-scope.md).
+Full reasoning for each exclusion: [`docs/scope.md`](docs/scope.md).
 
 ---
 
@@ -136,4 +136,4 @@ Full reasoning for each exclusion: [`docs/03-aegis-scope.md`](docs/03-aegis-scop
 
 ## Authors
 
-Built by [Your name] (systems security engineer) and Faizan (security / detection engineer) as a portfolio project.
+Built by Furqan and Faizan as a portfolio project.

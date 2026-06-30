@@ -5,20 +5,20 @@
 Aegis is a two-layer, single-host security monitoring system:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         AEGIS HOST                           │
-│                                                              │
-│  ┌──────────────────┐         ┌───────────────────────────┐  │
-│  │   SENSING LAYER   │  JSON   │      POLICY LAYER          │  │
-│  │   (aegisd, C)     │ events  │   (Python, Faizan-owned)   │  │
-│  │                   │ ──────► │                             │  │
-│  │  - Process scan   │  via    │  - Rule engine              │  │
-│  │  - File watch     │  pipe/  │  - Severity scoring         │  │
-│  │  - Net connections│  socket │  - Alert generation         │  │
-│  │  - Privilege chk  │         │  - Log/alert output         │  │
-│  └──────────────────┘         └───────────────────────────┘  │
-│         owned by: Furqan            owned by: Faizan         │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                         AEGIS HOST                            │
+│                                                               │
+│  ┌───────────────────┐         ┌───────────────────────────┐  │
+│  │   SENSING LAYER   │  JSON   │      POLICY LAYER         │  │
+│  │   (aegisd, C)     │ events  │   (Python, Faizan-owned)  │  │
+│  │                   │ ──────► │                           │  │
+│  │  - Process scan   │  via    │  - Rule engine            │  │
+│  │  - File watch     │  pipe/  │  - Severity scoring       │  │
+│  │  - Net connections│  socket │  - Alert generation       │  │
+│  │  - Privilege chk  │         │  - Log/alert output       │  │
+│  └───────────────────┘         └───────────────────────────┘  │
+│         owned by: Furqan            owned by: Faizan          │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 The boundary between these layers is the **event schema** — a JSON contract defined in Week 1 and frozen (changes require explicit renegotiation) for the rest of the project. This is the single most important architectural decision: it lets both halves be built in parallel without one blocking the other.
