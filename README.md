@@ -18,7 +18,7 @@ Aegis monitors a Linux host for security-relevant behavior — process activity,
 - [ ] Week 5 — Attack simulation, integration testing
 - [ ] Week 6 — Documentation, demo, polish
 
-See [`docs/03-aegis-scope.md`](docs/scope.md) for the full week-by-week plan.
+See [`docs/scope.md`](docs/scope.md) for the full week-by-week plan.
 
 ---
 
