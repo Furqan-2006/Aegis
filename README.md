@@ -8,9 +8,6 @@ Aegis monitors a Linux host for security-relevant behavior — process activity,
 
 ## Status
 
-> **This section reflects real, current progress — update it honestly as work happens, don't let it drift out of sync with the actual repo.**
-
-- [ ] Week 0 — Skills foundation, SAM anomaly detection layer completed
 - [ ] Week 1 — Daemon foundation, event schema locked
 - [ ] Week 2 — File integrity watcher, floor-tier detection rules
 - [ ] Week 3 — Privilege detection, sensing↔policy IPC integration
