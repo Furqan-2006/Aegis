@@ -31,28 +31,6 @@
 
 ## 3. Week-by-Week Plan
 
-### Week 0 — Skills Foundation (revised)
-
-**Why this week exists, revised:** the original depth-assessment answer to Section B Q4 stated "no, never written code," which initially scoped Week 0 as from-zero programming instruction. That's inconsistent with Faizan being a 4th-semester CS student with completed programming coursework and DSA — **this contradiction has not yet been resolved and should be clarified directly with Faizan before Week 0 begins**, since the two readings imply different starting points: either he answered Q4 too literally (interpreting "code" as "security/OS-related code" specifically), or there's a real gap between coursework completion and working confidence that's itself worth knowing about.
-
-Pending that clarification, Week 0 is now scoped narrower, assuming general programming literacy (variables, conditionals, functions, basic data structures) is solid from coursework. The actual gap is **domain literacy**, not programming fundamentals:
-
-**Faizan:**
-- Confirm which language(s) his coursework used; if not Python, a short syntax-translation pass (not concept-learning) — most CS coursework is C/C++/Java, and the gap from any of those to basic Python is small for someone who already has the underlying programming concepts
-- JSON/YAML as configuration formats specifically (likely genuinely new — these aren't typically covered in intro CS coursework the way general syntax is)
-- OS/process-domain literacy: what a process tree looks like, what an "event" means in this context, walking through the example rules in the Architecture document line by line until he can explain each one back unprompted
-- Re-attempt Section C, Q8–9 from the depth assessment (process vs. thread, privilege escalation) after this pass — checkpoint for whether direct teaching closes the conceptual gap that self-study hadn't
-- Optional, side-track: general Linux/terminal comfort (e.g., freeCodeCamp's Introduction to Linux course) — useful but does not replace the domain-literacy work above, since terminal navigation isn't the actual Week 1 bottleneck
-
-**You:**
-- Complete SAM's remaining anomaly detection layer (the deferred item from the original SAM sprint) — this directly feeds the sensing layer work in Week 1, so finishing it now removes a dependency rather than adding parallel work later
-- Lightly review/refresh `/proc` internals and daemon-writing patterns (signal handling, fork/detach) ahead of Week 1, since it's been some time since the original SAM sprint
-- Prepare 2–3 concrete worked examples of "event → rule → alert" to use as Faizan's Week 0 practice material — this is teaching prep, treat it as real project time, not overhead
-
-**Joint:**
-- End-of-week checkpoint: Faizan attempts Q7 from the depth assessment again (or an equivalent live exercise) — write and run one real, working rule against a sample event, with you watching but not doing it for him. Given confirmed prior programming experience, this should be a meaningfully easier bar to clear than originally scoped; if it's still a struggle, that's a stronger signal than before that something beyond syntax is the blocker (e.g., genuine unfamiliarity with the domain concepts, not the code itself).
-
----
 
 ### Week 1 — Foundations & Interface Lock
 **You:**
