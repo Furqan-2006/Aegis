@@ -11,5 +11,4 @@ extern volatile sig_atomic_t running;
 
 void daemonize();
 void register_signal_handlers();
-void run_poll_loop();
 void cleanup_and_shutdown(int fd, char const *pidfile_path);

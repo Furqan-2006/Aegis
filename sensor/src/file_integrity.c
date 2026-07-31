@@ -35,7 +35,7 @@ static int compute_sha256(const char *path, char *out_hash, long *out_size)
 
     for (unsigned int i = 0; i < digest_len; i++)
     {
-        snprintf(out_hash + (i * 2), "%02x", digest[i]);
+        sprintf(out_hash + (i * 2), "%02x", digest[i]);
     }
     out_hash[digest_len * 2] = '\0';
 

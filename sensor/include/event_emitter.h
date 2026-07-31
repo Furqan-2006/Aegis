@@ -1,6 +1,7 @@
 #pragma once
 
 #include "event_schema.h"
+#include <stdio.h>
 
 typedef struct {
     FILE *log_file;

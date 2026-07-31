@@ -5,6 +5,7 @@ volatile sig_atomic_t running = 1;
 
 static void shutdown_handler(int sig)
 {
+    (void)sig;
     running = 0;
 }
 
@@ -34,16 +35,6 @@ void daemonize()
     dup2(null_fd, STDERR_FILENO);
 
     close(null_fd);
-}
-
-void run_poll_loop()
-{
-    while (running)
-    {
-        // scanners/sensors will be added here when made later
-        // json logger too.
-        usleep(200000);
-    }
 }
 
 void cleanup_and_shutdown(int fd, char const *pidfile_path)

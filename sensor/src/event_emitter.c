@@ -27,7 +27,7 @@ static void json_escape(const char *in, char *out, size_t out_size)
     {
         if (in[i] == '"' || in[i] == '\\')
         {
-            out[j++] = '\\'
+            out[j++] = '\\';
         }
         out[j++] = in[i];
     }
@@ -70,7 +70,7 @@ int event_emitter_init(EventEmitter *emitter, const char *log_path, const char *
 
 static int build_json(const event_t *e, char *buf, size_t buf_size)
 {
-    char cmdline_esc[512], exe_esc[512], detail_buf[1024];
+    char cmdline_esc[512], exe_esc[512], detail_buf[2048];
     json_escape(e->source.cmdline, cmdline_esc, sizeof(cmdline_esc));
     json_escape(e->source.exe_path, exe_esc, sizeof(exe_esc));
 

@@ -50,7 +50,7 @@ static unsigned long find_pid_for_inode(unsigned long target_inode)
         if (!isdigit((unsigned char)entry->d_name[0]))
             continue;
 
-        char fd_dir_path[64];
+        char fd_dir_path[300];
         snprintf(fd_dir_path, sizeof(fd_dir_path), "/proc/%s/fd", entry->d_name);
 
         DIR *fd_dir = opendir(fd_dir_path);
@@ -62,7 +62,7 @@ static unsigned long find_pid_for_inode(unsigned long target_inode)
         struct dirent *fd_entry;
         while ((fd_entry = readdir(fd_dir)) != NULL)
         {
-            char link_path[128];
+            char link_path[600];
             char link_target[64];
             snprintf(link_path, sizeof(link_path), "%s/%s", fd_dir_path, fd_entry->d_name);
 
@@ -169,7 +169,7 @@ int scan_connections(NetMonitorState *state, event_t **out_events, int *out_coun
     {
         unsigned int local_addr_hex, local_port, remote_addr_hex, remote_port, state_hex;
         unsigned long inode;
-        char local_addr_str[16], remote_addr_str[16];
+        
 
         // Format: sl local_address rem_address st tx_rx tr:tm retrn uid timeout inode
         int matched = sscanf(line, "%*d: %8X:%X %8X:%X %X %*x:%*x %*x:%*x %*x %*d %*d %lu",
