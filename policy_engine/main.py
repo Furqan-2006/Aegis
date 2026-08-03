@@ -433,7 +433,7 @@ def check_bytes_threshold (event12) :
     event_type = event.get("event_type", "unknown_event_type")
 
     if event_type == "net_connection":
-        bytes_sent = event["detail"]["bytes_sent"]
+        bytes_sent = event["detail"].get("bytes_sent", 0)  # v2 field; defaults to 0 under v1 schema so this rule stays dormant instead of crashing
         if bytes_sent > LARGE_TRANSFER_THRESHOLD :
             remote_addr = event["detail"]["remote_addr"]
             for ip in ipss :
@@ -458,7 +458,7 @@ def check_cumulative_transfer(event12):
         return None
 
     uid = event["source"]["uid"]
-    bytes_sent = event["detail"]["bytes_sent"]
+    bytes_sent = event["detail"].get("bytes_sent", 0)  # v2 field; defaults to 0 under v1 schema so this rule stays dormant instead of crashing
     current_time = datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00"))
 
     if uid not in user_transfer_log:
@@ -478,8 +478,3 @@ def check_cumulative_transfer(event12):
         return {"category": "Data Transfer", "severity": "info",
                 "reason": f"cumulative transfer within normal range for uid {uid}: {total_bytes} bytes in {CUMULATIVE_WINDOW_SECONDS}s",
                 "event_id": event["event_id"]}
-    
-
-
-
-
