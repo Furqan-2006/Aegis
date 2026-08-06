@@ -1,5 +1,11 @@
 import json
 from datetime import datetime, timedelta
+import socket
+import os
+LOG_FILE_PATH = "aegis_alerts.log"
+def write_alert(alert):
+    with open(LOG_FILE_PATH, "a") as log_file:
+        log_file.write(json.dumps(alert) + "\n")
 
 failed_login_history = {}
 FAILURE_WINDOW_SECONDS = 60
@@ -27,31 +33,6 @@ recent_suspicious_spawns = {}
 user_transfer_log = {}
 CUMULATIVE_WINDOW_SECONDS = 120
 CUMULATIVE_THRESHOLD = 100000000
-
-def handle_event (raw_json) :
-
-    event = json.loads (raw_json)
-
-    event_type = event.get ("event_type", "unknow event type")
-
-    print (f"Event type -> {event_type}")
-
-    severity = "low"
-
-    if event_type == "failed_login"  and event.get("user")== "root" :
-        severity = "critical"
-    elif event_type == "file_modification" :
-        severity = "high"
-    elif event_type == "logout" :
-        severity = "info"
-
-    print(f"Severity is {severity} ")
-
-    if severity == "critical" :
-        print("Severity is critical")
-    else :
-        print("Event processed")
-
 
 # File Access
 
@@ -365,7 +346,7 @@ def check_user (event46) :
                     "event_id": event["event_id"]}
         else :
             return {"category": "User Behaviour", "severity": "warning",   # <-- CHANGED from "critical"
-                    "reason": f"privileged uid {uid} (euid {euid}) ran new program: {exe_path}",
+                    "reason": f"new program for non-privileged uid {uid}: {exe_path}",
                     "event_id": event["event_id"]}
 
 def check_user_activity_burst(event78):
@@ -395,7 +376,8 @@ def check_user_activity_burst(event78):
                 "reason": f"activity burst for uid {uid}: {recent_count} actions in {ACTIVITY_WINDOW_SECONDS}s",
                 "event_id": event["event_id"]}
 
-def check_privilege_escalation_chain(event):
+def check_privilege_escalation_chain(event89):
+    event = json.loads(event89)
     event_type = event["event_type"]
     uid = event["source"]["uid"]
 
@@ -478,3 +460,63 @@ def check_cumulative_transfer(event12):
         return {"category": "Data Transfer", "severity": "info",
                 "reason": f"cumulative transfer within normal range for uid {uid}: {total_bytes} bytes in {CUMULATIVE_WINDOW_SECONDS}s",
                 "event_id": event["event_id"]}
+ALL_CHECKS = [
+    file_access_check,
+    check_sys_file_change,
+    check_sys_process,
+    check_network_behaviour,
+    check_failed_login_history,   # <-- corrected name
+    check_last_location,
+    check_login_ceiling,
+    check_user,
+    check_user_activity_burst,
+    check_privilege_escalation_chain,
+    check_bytes_threshold,
+    check_cumulative_transfer,
+]
+def dispatch(event_line):
+    results = []
+    for check_function in ALL_CHECKS:
+        result = check_function(event_line)
+        if result is not None:
+            results.append(result)
+    return results
+
+def run_server():
+    SOCKET_PATH = "/tmp/aegis.sock"
+    if os.path.exists(SOCKET_PATH):
+        os.remove(SOCKET_PATH)
+    server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server_socket.bind(SOCKET_PATH)
+    server_socket.listen(1)
+    print(f"Listening on {SOCKET_PATH}...")
+
+    while True:
+        connection, client_address = server_socket.accept()
+        print("aegisd connected!")
+
+        buffer = ""
+        while True:
+            data = connection.recv(4096)
+            if not data:
+                break
+            buffer += data.decode("utf-8")
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                if not line.strip():
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"Skipping malformed event: {line}")
+                    continue
+                alerts = dispatch(line)
+                for alert12 in alerts:
+                    print(alert12)
+                    write_alert(alert12)
+
+        connection.close()
+        print("aegisd disconnected. Waiting for a new connection...")
+
+if __name__ == "__main__":
+    run_server()
