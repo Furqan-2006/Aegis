@@ -1,136 +1,106 @@
 # Aegis
 
-**A lightweight, single-host Endpoint Detection and Response (EDR-lite) tool for Linux.**
+Aegis is a lightweight Linux **EDR-lite** system that monitors host activity and raises security alerts.
 
-Aegis monitors a Linux host for security-relevant behavior — process activity, network connections, file integrity, and privilege changes — and evaluates that activity against a configurable rule engine to detect signs of compromise. It's built as a two-layer system: a C daemon that senses OS-level activity, and a Python rule engine that interprets it.
-
----
-
-## Status
-
-- [ ] Week 1 — Daemon foundation, event schema locked
-- [ ] Week 2 — File integrity watcher, floor-tier detection rules
-- [ ] Week 3 — Privilege detection, sensing↔policy IPC integration
-- [ ] Week 4 — Mid-tier detection rules, severity scoring
-- [ ] Week 5 — Attack simulation, integration testing
-- [ ] Week 6 — Documentation, demo, polish
-
-See [`docs/scope.md`](docs/scope.md) for the full week-by-week plan.
+It is built as two cooperating components:
+- **Sensing layer (`aegisd`, C)**: collects process, network, file integrity, and privilege-change events.
+- **Policy engine (`policy_engine/main.py`, Python)**: receives events over a Unix domain socket and applies detection rules.
 
 ---
 
-## Why Aegis Exists
+## Description
 
-Most introductory security projects (login systems with brute-force detection, file hashers, basic packet sniffers) demonstrate application-layer security hygiene — they don't require understanding process internals, privilege models, or how attacker behavior actually surfaces as OS-level signals.
+Aegis continuously observes:
+- Process lifecycle (`process_spawn`, `process_exit`)
+- TCP network activity (`net_connection`)
+- Integrity changes on sensitive files (`file_modified`)
+- UID/EUID transitions (`privilege_change`)
 
-Aegis is scoped deliberately differently: the systems side requires real OS/process internals engineering (daemon design, `/proc` parsing, privilege tracking), and the security side requires real threat reasoning — understanding *why* a given signal indicates compromise, not just pattern-matching strings. It's a two-person project where both roles are substantive systems/security engineering work, not one person doing the engineering and the other doing setup.
-
-This project also builds directly on [SAM (System Activity Monitor)](#), a prior C tool that established the foundational `/proc`-based process scanning, network connection scanning, and anomaly detection that Aegis's sensing layer extends.
+Events are serialized as JSON and follow the schema in:
+- `/home/runner/work/Aegis/Aegis/schema/schema.json`
 
 ---
 
-## Architecture
+## Design
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                         AEGIS HOST                            │
-│                                                               │
-│  ┌───────────────────┐         ┌───────────────────────────┐  │
-│  │   SENSING LAYER   │  JSON   │      POLICY LAYER         │  │
-│  │   (aegisd, C)     │ events  │   (Python rule engine)    │  │
-│  │                   │ ──────► │                           │  │
-│  │  - Process scan   │  via    │  - Rule engine            │  │
-│  │  - File watch     │  Unix   │  - Severity scoring       │  │
-│  │  - Net connections│ socket  │  - Alert generation       │  │
-│  │  - Privilege chk  │         │  - Log/alert output       │  │
-│  └───────────────────┘         └───────────────────────────┘  │
-└───────────────────────────────────────────────────────────────┘
+### Architecture
+
+```text
+┌──────────────────────────── AEGIS HOST ────────────────────────────┐
+│                                                                     │
+│  ┌────────────────────────┐      Unix socket      ┌───────────────┐ │
+│  │ Sensing Layer (C)      │  /tmp/aegis.sock      │ Policy Engine │ │
+│  │ - process monitor      │  JSON event stream    │ (Python)      │ │
+│  │ - network monitor      │  -------------------> │ - rule checks │ │
+│  │ - file integrity check │                       │ - alerts log  │ │
+│  │ - privilege monitor    │                       │               │ │
+│  └────────────────────────┘                       └───────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-The two layers communicate over a locked JSON event schema (see [`docs/json_schema_ref.md`](docs/json_schema_ref.md) and the formal schema at [`schema/schema.json`](schema/schema.json)). This schema is the contract between the two halves of the system — both sides are built and tested against it independently.
-
-Full architectural detail, including IPC mechanism choice, polling strategy, and component breakdown, is in [`docs/architecture.md`](docs/architecture.md).
-
----
-
-## What Aegis Detects
-
-| Event type | What it watches | Example detection |
-|---|---|---|
-| `process_spawn` | New processes, parent-child lineage | A shell process spawned from a web server process — classic reverse shell pattern |
-| `process_exit` | Process termination, exit codes | Very short-lived processes from unexpected parents |
-| `net_connection` | Active TCP connections | Outbound connections to known reverse-shell-style ports |
-| `file_modified` | SHA-256 integrity on sensitive paths | Modification of `/etc/shadow`, `/etc/passwd`, SSH config outside expected admin operations |
-| `privilege_change` | UID/EUID transitions | A non-root process acquiring EUID 0 — privilege escalation |
-
-Full field reference and worked examples for every event type: [`docs/json_schema_ref.md`](docs/json_schema_ref.md).
+### Runtime behavior
+- The daemon writes raw events to `/var/log/aegis_events.log`.
+- The policy engine writes alert decisions to `/home/runner/work/Aegis/Aegis/aegis_alerts.log`.
+- Event schema and reference docs:
+  - `/home/runner/work/Aegis/Aegis/schema/schema.json`
+  - `/home/runner/work/Aegis/Aegis/docs/json_schema_ref.md`
 
 ---
 
-## Roles
+## Repository Structure
 
-**Systems Security Engineer — sensing layer**
-Daemon design and lifecycle (fork/detach, signal handling, graceful shutdown), `/proc`-based process and network telemetry, file integrity hashing, privilege transition detection, and the event schema that defines the contract with the policy layer.
-
-**Security / Detection Engineer — policy layer**
-Detection rule design and implementation, severity scoring, and the reasoning behind what OS-level signals indicate compromise — starting from simple static rules and growing toward time-windowed correlation across multiple signal types.
-
-Both roles are intentionally substantive — see [`docs/proposal.md`](docs/proposal.md) for why this split was deliberately designed this way, and what it was designed to avoid.
-
----
-
-## Project Documents
-
-| Document | Purpose |
-|---|---|
-| [`docs/proposal.md`](docs/proposal.md) | Why this project exists, problem statement, roles, risks |
-| [`docs/architecture.md`](docs/architecture.md) | Full system architecture, component breakdown, technology choices |
-| [`docs/scope.md`](docs/scope.md) | In/out of scope boundaries, week-by-week build plan, definition of done |
-| [`docs/json_schema_ref.md`](docs/json_schema_ref.md) | Field-by-field event schema reference with worked examples |
-| [`schema/schema.json`](schema/schema.json) | Formal JSON Schema, used for runtime validation in the policy layer |
+```text
+/home/runner/work/Aegis/Aegis
+├── run_aegis.sh                 # Supervisor script (build + start both layers)
+├── sensor/
+│   ├── src/                     # C implementation (daemon, monitors, emitter)
+│   └── include/                 # C headers
+├── policy_engine/
+│   └── main.py                  # Python rule engine + Unix socket server
+├── schema/
+│   └── schema.json              # Locked event contract
+├── docs/                        # Architecture, scope, schema reference, proposal
+└── bin/
+    └── aegisd                   # Compiled daemon binary
+```
 
 ---
 
-## What's Explicitly Out of Scope
+## Usage
 
-Aegis is scoped narrowly on purpose, to be completable in 6–7 weeks by two people without sacrificing depth. Explicitly excluded:
+### Prerequisites
+- Linux host
+- `gcc`
+- OpenSSL development library (for `-lcrypto`)
+- `python3`
+- `sudo` privileges (daemon startup and log path usage)
 
-- eBPF / kernel modules (stays in userspace, `/proc`-based polling)
-- IPv6 and UDP connection tracking
-- Machine learning / statistical anomaly detection
-- Multi-host or distributed agent architecture
-- Web dashboard (terminal/CLI output only)
-- Database backend (flat JSON logs)
-- Offensive tooling / exploit development — Aegis is defensive only
+### Compile and Run (Shell Script)
 
-Full reasoning for each exclusion: [`docs/scope.md`](docs/scope.md).
+Use the provided supervisor script:
 
----
+```bash
+cd /home/runner/work/Aegis/Aegis
+chmod +x run_aegis.sh
+./run_aegis.sh
+```
 
-## Tech Stack
+What this script does:
+1. Compiles the sensing daemon (`bin/aegisd`) from `sensor/src/*.c`
+2. Starts `aegisd` with `sudo`
+3. Starts the policy engine (`python3 policy_engine/main.py`)
 
-| Component | Technology |
-|---|---|
-| Sensing layer | C, `cJSON` |
-| Policy layer | Python, `jsonschema` |
-| IPC | Unix domain socket (newline-delimited JSON) |
-| Storage | Flat JSON log files |
-| Platform | Linux only |
+To stop both processes, press `Ctrl+C` in the same terminal.
 
----
-
-## Running Aegis
-
-> To be filled in once the daemon and rule engine reach a runnable state. Will include build instructions, configuration (watched paths, rule definitions), and how to start/stop `aegisd`.
+### Logs
+- Sensor events: `/var/log/aegis_events.log`
+- Policy alerts: `/home/runner/work/Aegis/Aegis/aegis_alerts.log`
 
 ---
 
-## Demo
+## Additional Technical Documents
 
-> A short demo (terminal recording) showing Aegis detecting a simulated attack scenario end-to-end will be added here once Week 5 integration testing is complete.
-
----
-
-## Authors
-
-Built by Furqan and Faizan as a portfolio project.
+- Architecture: `/home/runner/work/Aegis/Aegis/docs/architecture.md`
+- Scope and milestones: `/home/runner/work/Aegis/Aegis/docs/scope.md`
+- Proposal: `/home/runner/work/Aegis/Aegis/docs/proposal.md`
+- Event schema reference: `/home/runner/work/Aegis/Aegis/docs/json_schema_ref.md`
